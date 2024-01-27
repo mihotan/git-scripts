@@ -17,13 +17,16 @@ if [ "$answer" != "Y" ]; then
 fi
 
 hibernate_output=$(sudo systemctl hibernate 2>&1)
-
-if [[ $(echo $hibernate_output | grep -o 'not supported$') ]]; then
+known_messages=( \
+  "Call to Hibernate failed: Not enough swap space for hibernation" \
+  "Hibernate message not supported" \
+)
+if [[ " ${known_messages[*]} " =~ " $hibernate_output " ]]; then
   system_memory=$(free -m | grep Mem | awk {'print $2'})
-  #full_memory=$(grep MemTotal: /proc/meminfo | awk {'print $2'} | rev | cut -c 4- | rev)
+  full_memory=$(grep MemTotal: /proc/meminfo | awk {'print $2'} | rev | cut -c 4- | rev)
   echo "You need a swap file large enough to hold all your system memory ($system_memory MiB)."
-  #echo "I will create a file of $full_memory MB."
-  swapon --show
+  echo "I will create a file of $full_memory MB."
+  sudo swapon --show
   df -h
   echo "Please enter a file name where you want this new swap file to be created. (CTRL-C to cancel.)"
   echo "Entering an existing file will assume this file is the one you want to use and skip creation."
@@ -33,10 +36,11 @@ if [[ $(echo $hibernate_output | grep -o 'not supported$') ]]; then
     echo "File exist, skipping creation and setting up hibernation."
   else
     echo "Swap file does not exist, proceeding with creation."
-    sudo dd if=/dev/zero of=$swapfilepath count=$system_memory bs=1MiB
+    sudo dd if=/dev/zero of=$swapfilepath count=$full_memory bs=1MiB
     sudo chmod 600 $swapfilepath
     sudo mkswap $swapfilepath
     sudo swapon $swapfilepath
+    # TODO: verify the line isnt already present before adding.
     echo "$swapfilepath none swap sw 0 0" | sudo tee -a /etc/fstab
   fi
 
