@@ -3,6 +3,8 @@
 # I use this doc to assist me.
 # https://ubuntuhandbook.org/index.php/2021/08/enable-hibernate-ubuntu-21-10/
 # Updated with http://askubuntu.com/questions/1240123/ddg#1241902
+# More helpful info at https://bbs.archlinux.org/viewtopic.php?id=259382
+# And https://github.com/systemd/systemd/issues/15354
 
 echo This will first test if your system is able to hibernate.
 echo if it works, simply wake your system.
