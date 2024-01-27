@@ -40,8 +40,8 @@ if [[ " ${known_messages[*]} " =~ " $hibernate_output " ]]; then
     sudo chmod 600 $swapfilepath
     sudo mkswap $swapfilepath
     sudo swapon $swapfilepath
-    # TODO: verify the line isnt already present before adding.
-    echo "$swapfilepath none swap sw 0 0" | sudo tee -a /etc/fstab
+    fstab_swapline="$swapfilepath none swap sw 0 0"
+    [[ grep -q "$fstab_swapline" /etc/fstab ]] && echo "fstab already updated" || echo "$fstab_swapline" | sudo tee -a /etc/fstab
   fi
 
   blk_info=$(sudo blkid $(df $swapfilepath | tail -n 1 | awk {'print $1'}))
@@ -71,6 +71,7 @@ Action=org.freedesktop.login1.hibernate;org.freedesktop.login1.handle-hibernate-
 ResultActive=yes
 '
   echo "$polkit_content" | sudo tee /etc/polkit-1/localauthority/50-local.d/com.ubuntu.enable-hibernate.pkla
+  echo -e "[Service]\nEnvironment=SYSTEMD_BYPASS_HIBERNATION_MEMORY_CHECK=1\n" | sudo tee /etc/systemd/system/systemd-logind.service.d/override.conf
   [[ $(cat /sys/power/state) == "freeze mem disk" ]] && echo "it should be working now" || echo "its still unlikely to work"
 else
   echo Got unsupported message: $hibernate_output
